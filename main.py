@@ -77,7 +77,7 @@ def trainAgent(agent):
 
 def showGridCells(agent):
     from ratSimulator import RatSimulator
-    timesteps=200000
+    timesteps=1000000
     env=RatSimulator(timesteps)
     print(">>Generating trajectory")
     vel, angVel, pos, angle =env.generateTrajectory()
