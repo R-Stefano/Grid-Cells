@@ -228,7 +228,6 @@ class network():
         batches=int(steps//100)
         startB=0
         for b in range(batches):
-            print("Batch N", b)
             endB=startB+100
 
             #Retrieve the inputs for the timestep
@@ -286,7 +285,7 @@ class network():
             fig=plt.figure(figsize=(40, 40))
             for i in range(1, rows*cols+1):
                 fig.add_subplot(rows, cols, i)
-                plt.imshow(result[count], cmap="jet", origin="lower", interpolation="nearest")#change to gaussian later,
+                plt.imshow(result[count], cmap="jet", origin="lower", interpolation="gaussian")
                 plt.axis('off')
                 count+=1
             fig.savefig('activityMaps/neurons_'+str(count-64)+'-'+str(count)+'.jpg')       

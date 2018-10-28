@@ -53,7 +53,6 @@ def trainAgent(agent):
     batches=int(inputData.shape[0]/batch_size)
 
     for epoch in range(epoches):
-        print("\n>>Epoch", epoch)
         startB=0
         for batch in range(batches):
             endB=startB+batch_size
@@ -111,10 +110,12 @@ if __name__ == '__main__':
                     print("Loading the model..")
                     agent.save_restore_Model(restore=True)
                     global_step=sess.run(agent.epoch)
+                    print("Model loaded. Restartin from global step", global_step)
                 
                 trainAgent(agent)
             elif(args.mode=="showcells"):
                 agent.save_restore_Model(restore=True)
+                print("Model updated at global step:", sess.run(agent.epoch), "loaded")
                 showGridCells(agent)
                 
         except (KeyboardInterrupt,SystemExit):
