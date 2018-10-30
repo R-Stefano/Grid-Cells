@@ -16,15 +16,15 @@ class dataGenerator():
 
         
     def generateData(self):
-        inputData=np.zeros((self.batch_size, self.number_steps,3))
+        inputData=np.zeros((self.batch_size+10, self.number_steps,3))
 
-        velocities=np.zeros((self.batch_size,self.number_steps))
-        angVelocities=np.zeros((self.batch_size,self.number_steps))
-        angles=np.zeros((self.batch_size,self.number_steps))
-        positions=np.zeros((self.batch_size, self.number_steps,2))
+        velocities=np.zeros((self.batch_size+10,self.number_steps))
+        angVelocities=np.zeros((self.batch_size+10,self.number_steps))
+        angles=np.zeros((self.batch_size+10,self.number_steps))
+        positions=np.zeros((self.batch_size+10, self.number_steps,2))
 
         print(">>Generating trajectories")
-        for i in range(self.batch_size):
+        for i in range(self.batch_size+10):
             vel, angVel, pos, angle=self.ratSimulator.generateTrajectory()    
 
             velocities[i]=vel
@@ -34,9 +34,14 @@ class dataGenerator():
         for t in range(self.number_steps):
             inputData[:,t,0],inputData[:,t,1],inputData[:,t,2]=velocities[:,t], np.sin(angVelocities[:,t]), np.cos(angVelocities[:,t])
 
-        mydict={"X":inputData,"pos":positions,"angle":angles}
+        mydict={"X":inputData[:-10],"pos":positions[:-10],"angle":angles[:-10]}
         with open('trajectoriesData.pickle', 'wb') as f:
             pickle.dump(mydict, f)
+        
+        mydict={"X":inputData[-10:],"pos":positions[-10:], "angle":angles[-10:]}
+        with open('trajectoriesDataTesting.pickle', 'wb') as f:
+            pickle.dump(mydict, f)
+        
 
     def computePlaceCellsDistrib(self, positions, cellCenters):
         num_cells=cellCenters.shape[0]

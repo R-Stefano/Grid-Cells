@@ -39,7 +39,17 @@ global_step=0
 command="train"
 def trainAgent(agent):
     global global_step
-    #Load data
+    #LOAD TESTING DATA
+    fileData=pickle.load(open("trajectoriesDataTesting.pickle","rb"))
+    inputDataTest=fileData['X']
+    posTest=fileData['pos']
+    angleTest=fileData['angle']
+
+    init_LSTMStateTest=np.zeros((10,PlaceCells_units + HeadCells_units))
+    init_LSTMStateTest[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(posTest[:,0], place_cell_centers)
+    init_LSTMStateTest[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angleTest[:,0], head_cell_centers)
+
+    #Load TRAINING Data
     fileData=pickle.load(open("trajectoriesData.pickle","rb"))
     inputData=fileData['X']
     pos=fileData['pos']
@@ -67,17 +77,20 @@ def trainAgent(agent):
             agent.training(batchX,batchY,batch_initLSTM, global_step)
             
             if (global_step%500==0):
+                print(">>Testing the agent")
+                agent.testing(inputDataTest, init_LSTMStateTest, posTest, place_cell_centers, epoch)
+
                 print(">>Global step:",global_step,"Saving the model..")
                 agent.save_restore_Model(restore=False, epoch=global_step)
 
             global_step+=1
             startB=endB
 
-
 def showGridCells(agent):
     num_traj=50
     inputData=np.zeros((num_traj,numberSteps,3))
     positions=np.zeros((num_traj,numberSteps,2))
+    angles=np.zeros((num_traj,numberSteps,1))
     env=RatSimulator(numberSteps)
     print(">>Generating trajectory")
     for i in range(num_traj):
@@ -89,8 +102,8 @@ def showGridCells(agent):
 
 
     init_LSTMState=np.zeros((num_traj,PlaceCells_units + HeadCells_units))
-    init_LSTMState[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(np.reshape(pos[0], (1,2)), place_cell_centers)
-    init_LSTMState[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(np.reshape(angle[0], (1,1)), head_cell_centers)
+    init_LSTMState[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(positions[:,0], place_cell_centers)
+    init_LSTMState[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angles[:,0], head_cell_centers)
 
     print(">>Computing Activity Map..")
     agent.showGridCells(inputData, init_LSTMState, positions)

@@ -133,6 +133,9 @@ class network():
         #Episode data
         self.mn_loss=tf.placeholder(tf.float32)
         self.mergeEpisodeData=tf.summary.merge([tf.summary.scalar("mean_loss", self.mn_loss)])
+
+        self.avgD=tf.placeholder(tf.float32)
+        self.mergeAccuracyData=tf.summary.merge([tf.summary.scalar("average_distance", self.avgD)])
     
     def save_restore_Model(self, restore, epoch=0):
         if restore:
@@ -213,6 +216,83 @@ class network():
         self.file.add_summary(mergedData, epoch)
 
         startB=endB
+
+    def testing(self, X, init_X, positions_array, pcc, epoch):
+        #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
+        #except at timestep=0
+        hidden_state=np.zeros((100, self.Hidden_units))
+        cell_state=np.zeros((100, self.Hidden_units))
+
+        avgD=0
+
+        #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
+        batches=int(self.numberSteps//100)
+        startB=0
+        for b in range(batches):
+            endB=startB+100
+
+            #Retrieve the inputs for the timestep
+            xBatch=X[:,startB:endB]
+
+            #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
+            feed_dict={ self.X: xBatch, 
+                        self.placeCellGround: init_X[:, :self.PlaceCells_units], 
+                        self.headCellGround: init_X[:, self.PlaceCells_units:],
+                        self.timestep: startB,
+                        self.old_cell_state: cell_state,
+                        self.old_hidden_state: hidden_state}
+            
+            lstm_state, placeCellLayer=self.sess.run([self.hidden_cell_statesTuple, self.OutputPlaceCellsLayer], feed_dict=feed_dict)
+            
+
+            #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
+            #have the same values of the h_state and c_state oututed at the previous timestep training
+            hidden_state=lstm_state[0]
+            cell_state=lstm_state[1]    
+            
+            #retrieve the position in these 100 timesteps
+            positions=positions_array[:,startB:endB]
+            #placecell is in shape 1000,256. idx has shape 1000,1
+            idx=np.argmax(placeCellLayer, axis=1)
+            
+            #it has shape [1000,2]
+            predPositions=pcc[idx]
+
+            distances=np.sqrt(np.sum((predPositions - np.reshape(positions, (-1,2)))**2, axis=1))
+            avgD +=np.mean(distances)/batches
+        
+        #testing epoch finished, save the accuracy for tensorboard
+        mergedData=self.sess.run(self.mergeAccuracyData, feed_dict={self.avgD: avgD})
+        
+        self.file.add_summary(mergedData, epoch)
+
+            '''
+            #for every batch
+            for i in range(10):
+                #for every timestep
+                for j in range(100):
+                    #retrieve most active neuron
+                    idx=np.argmax(placeCellLayerReshaped[i,j])
+                    print(pcc[idx])
+                    #store in the array
+                    predPositions[i,j+startB-1]=pcc[idx]
+            '''
+        '''
+        rows=3
+        cols=3
+        fig=plt.figure(figsize=(40, 40))
+        for i in range(1, rows*cols+1):
+            fig.add_subplot(rows, cols, i)
+            #plot real trajectory
+            plt.plot(positions_array[i,:,0], positions_array[i,:,1], 'b')
+            #plot predicted trajectory
+            plt.plot(predPositions[i,:,0], predPositions[i,:,1], 'r')
+            plt.axis('off')
+
+        fig.savefig('predictedTrajectory.jpg')
+        '''
+
+
     
     def showGridCells(self, X, init_X, positions_array):
         #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
