@@ -36,7 +36,7 @@ dataGenerator=dataGenerator(trajectories, numberSteps, num_features, PlaceCells_
 global_step=0
 
 
-command="train"
+
 def trainAgent(agent):
     global global_step
     #LOAD TESTING DATA

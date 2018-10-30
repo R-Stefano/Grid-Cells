@@ -3,6 +3,13 @@
 ## About
 Replicating Google Deepmind's paper ["Vector-based Navigation using Grid-like Representations in Artificial Agents"](https://deepmind.com/blog/grid-cells/).
 
+It has been a long day, you are really tired and you just arrived home. You open the door and you don't have to turn on the lights but you can successfully reach the bed and felt asleep. 
+How it has been possible?
+
+You were tired and you didn't even see where you were going. Despite this, you moved through a familiar environment easily. 
+
+Mainly, this achievement has been possible due to the work done in the Hippocampus and in the Entorhinal cortex. In fact, it is believed that particular neurons in these regions of the brain allow us to self-localize and to navigate through environments. In these regions of the brain there are neurons that fire depending on where we are: Place cells and others that fire based on which direction we are facing: Head-direction Cells..
+
 [What are Grid cells?  Full article about the paper here]() (add link)
 
 ## Dependencies

@@ -266,18 +266,17 @@ class network():
         
         self.file.add_summary(mergedData, epoch)
 
-            '''
-            #for every batch
-            for i in range(10):
-                #for every timestep
-                for j in range(100):
-                    #retrieve most active neuron
-                    idx=np.argmax(placeCellLayerReshaped[i,j])
-                    print(pcc[idx])
-                    #store in the array
-                    predPositions[i,j+startB-1]=pcc[idx]
-            '''
         '''
+        #for every batch
+        for i in range(10):
+            #for every timestep
+            for j in range(100):
+                #retrieve most active neuron
+                idx=np.argmax(placeCellLayerReshaped[i,j])
+                print(pcc[idx])
+                #store in the array
+                predPositions[i,j+startB-1]=pcc[idx]
+
         rows=3
         cols=3
         fig=plt.figure(figsize=(40, 40))
