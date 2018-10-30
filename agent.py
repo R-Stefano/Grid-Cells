@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from scipy.signal import correlate2d
 #Define the agent structure network
 class network():
     def __init__(self, session, lr, hu, lu, place_units, head_units, clipping, weightDecay, batch_size, num_features, n_steps):
@@ -213,19 +214,14 @@ class network():
 
         startB=endB
     
-    def showGridCells(self, X, init_X, positions_array, steps):
-        #Add one dimension at the beginning (batch_size=1) to feed into the network 
-        X=np.expand_dims(X, axis=0)
-
-        init_X=np.expand_dims(init_X, axis=0)
-
+    def showGridCells(self, X, init_X, positions_array):
         #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
         #except at timestep=0
-        hidden_state=np.zeros((1, self.Hidden_units))
-        cell_state=np.zeros((1, self.Hidden_units))
+        hidden_state=np.zeros((100, self.Hidden_units))
+        cell_state=np.zeros((100, self.Hidden_units))
 
         #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
-        batches=int(steps//100)
+        batches=int(self.numberSteps//100)
         startB=0
         for b in range(batches):
             endB=startB+100
@@ -249,10 +245,10 @@ class network():
             hidden_state=lstm_state[0]
             cell_state=lstm_state[1]
 
-            positions=positions_array[startB:endB]
+            positions=np.reshape(positions_array[:,startB:endB],(-1,2))
 
             #save the value of the neurons in the linear layer at each timestep
-            for t in range(100):
+            for t in range(linearNeurons.shape[0]):
                 #Compute which bins are for each position
                 bin_x, bin_y=(positions[t]//self.factor).astype(int)
 
@@ -272,23 +268,38 @@ class network():
         result=self.activityMap/self.counterActivityMap
 
         os.makedirs("activityMaps", exist_ok=True)
+        os.makedirs("corrMaps", exist_ok=True)
+
 
         '''
         I want to show 64 neurons in each image so 8x8
         it means that there will be 8 images
         '''
-        cols=8
-        rows=8
+        cols=16
+        rows=32
         count=0
         #Save images
-        for img in range(8):
-            fig=plt.figure(figsize=(40, 40))
-            for i in range(1, rows*cols+1):
-                fig.add_subplot(rows, cols, i)
-                plt.imshow(result[count], cmap="jet", origin="lower", interpolation="gaussian")
-                plt.axis('off')
-                count+=1
-            fig.savefig('activityMaps/neurons_'+str(count-64)+'-'+str(count)+'.jpg')       
+        fig=plt.figure(figsize=(40, 40))
+        for i in range(1, rows*cols+1):
+            fig.add_subplot(rows, cols, i)
+            plt.imshow(2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower", interpolation="gaussian")
+            plt.axis('off')
+
+            count+=1
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)        
+        fig.savefig('activityMaps/neurons.jpg')
+
+        count=0
+        fig=plt.figure(figsize=(40, 40))
+        for i in range(1, rows*cols+1):
+            fig.add_subplot(rows, cols, i)
+            normMap=2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1
+            plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
+            plt.axis('off')
+
+            count+=1
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        fig.savefig('corrMaps/neurons.jpg')
 
         #Reset the maps
         self.activityMap=np.zeros((self.LinearLayer_units, self.bins, self.bins))

@@ -75,23 +75,25 @@ def trainAgent(agent):
 
 
 def showGridCells(agent):
-    from ratSimulator import RatSimulator
-    timesteps=1000000
-    env=RatSimulator(timesteps)
+    num_traj=50
+    inputData=np.zeros((num_traj,numberSteps,3))
+    positions=np.zeros((num_traj,numberSteps,2))
+    env=RatSimulator(numberSteps)
     print(">>Generating trajectory")
-    vel, angVel, pos, angle =env.generateTrajectory()
+    for i in range(num_traj):
+        vel, angVel, pos, angle =env.generateTrajectory()
+        inputData[i,:,0]=vel
+        inputData[i,:,1]=np.sin(angVel)
+        inputData[i,:,2]=np.cos(angVel)
+        positions[i,:]=pos
 
-    inputData=np.zeros((timesteps,3))
-    inputData[:,0]=vel
-    inputData[:,1]=np.sin(angVel)
-    inputData[:,2]=np.cos(angVel)
 
-    init_LSTMState=np.zeros((PlaceCells_units + HeadCells_units))
-    init_LSTMState[:PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(np.reshape(pos[0], (1,2)), place_cell_centers)
-    init_LSTMState[PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(np.reshape(angle[0], (1,1)), head_cell_centers)
+    init_LSTMState=np.zeros((num_traj,PlaceCells_units + HeadCells_units))
+    init_LSTMState[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(np.reshape(pos[0], (1,2)), place_cell_centers)
+    init_LSTMState[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(np.reshape(angle[0], (1,1)), head_cell_centers)
 
     print(">>Computing Activity Map..")
-    agent.showGridCells(inputData, init_LSTMState, pos, timesteps)
+    agent.showGridCells(inputData, init_LSTMState, positions)
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
