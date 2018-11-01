@@ -1,5 +1,7 @@
 # Vector-based Navigation using Grid-like Representations in Artificial Agents
 
+![Heading Image](http://demiledge.com/structureFiles/Images/VBN0.jpg)
+
 ## About
 Replicating Google Deepmind's paper ["Vector-based Navigation using Grid-like Representations in Artificial Agents"](https://deepmind.com/blog/grid-cells/).
 
@@ -16,6 +18,9 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 * Tensorflow
 * Numpy
 * Matplotlib
+
+## Network
+![network Image](http://demiledge.com/structureFiles/Images/VBN5.jpg)
 
 ## Getting started
 `ratSimulator.py` contains the code used to generate the trajectories. The simulator is based on [this paper](https://journals.plos.org/ploscompbiol/article/file?id=10.1371/journal.pcbi.1002553&type=printable).

@@ -47,7 +47,7 @@ class dataGenerator():
         num_cells=cellCenters.shape[0]
         batch_size=positions.shape[0]
         #Place Cell scale
-        sigma=0.01
+        sigma=0.3#0.01 NOT 0.01 PAPER ERROR
 
         summs=np.zeros(batch_size)
         #Store [envs,256] elements. Every row stores the distribution for a trajectory
@@ -58,8 +58,7 @@ class dataGenerator():
             l2Norms=np.sum((positions - cellCenters[i])**2, axis=1)
 
             #placeCells has shape [envs,1]
-            #placeCells=np.exp(-(l2Norms/(2*sigma**2)))
-            placeCells=np.exp(-(l2Norms/(2*sigma)))
+            placeCells=np.exp(-(l2Norms/(2*sigma**2)))
 
             distributions[:,i]=placeCells
             summs +=placeCells

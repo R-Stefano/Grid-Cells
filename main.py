@@ -13,9 +13,9 @@ linearLayerUnits=512
 PlaceCells_units=256
 HeadCells_units=12
 
-learning_rate=0.00001
-clipping=0.000001
-weightDecay=0.00001
+learning_rate=1e-5
+clipping=1e-5
+weightDecay=1e-5
 batch_size=10
 epoches=300000
 numberSteps=800
@@ -29,7 +29,7 @@ place_cell_centers=rs.uniform(0, 2.2 ,size=(PlaceCells_units,2))
 head_cell_centers=rs.uniform(-np.pi,np.pi,size=(HeadCells_units))
 
 #Number of trajectories to generate and use as data to train the network
-trajectories=250
+trajectories=500
 #Class that generate the trajectory and allows to compute the Place Cell and Head Cell distributions
 dataGenerator=dataGenerator(trajectories, numberSteps, num_features, PlaceCells_units, HeadCells_units)
 
@@ -76,9 +76,9 @@ def trainAgent(agent):
 
             agent.training(batchX,batchY,batch_initLSTM, global_step)
             
-            if (global_step%500==0):
+            if (global_step%100==0):
                 print(">>Testing the agent")
-                agent.testing(inputDataTest, init_LSTMStateTest, posTest, place_cell_centers, epoch)
+                agent.testing(inputDataTest, init_LSTMStateTest, posTest, place_cell_centers, global_step)
 
                 print(">>Global step:",global_step,"Saving the model..")
                 agent.save_restore_Model(restore=False, epoch=global_step)
@@ -87,7 +87,7 @@ def trainAgent(agent):
             startB=endB
 
 def showGridCells(agent):
-    num_traj=50
+    num_traj=5000
     inputData=np.zeros((num_traj,numberSteps,3))
     positions=np.zeros((num_traj,numberSteps,2))
     angles=np.zeros((num_traj,numberSteps,1))
