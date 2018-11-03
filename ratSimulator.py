@@ -70,7 +70,6 @@ class RatSimulator():
         plt.show()
         '''
         
-
         return velocities, angVel, positions, angle
 
     #HELPING FUNCTIONS
