@@ -10,7 +10,7 @@ class network():
         self.epoch=tf.Variable(0, trainable=False)
         self.numberSteps=n_steps
 
-        self.bins=20
+        self.bins=32
         self.factor=2.2/self.bins
         self.activityMap=np.zeros((lu, self.bins, self.bins))
         self.counterActivityMap=np.zeros((lu, self.bins, self.bins))
@@ -294,53 +294,59 @@ class network():
 
     
     def showGridCells(self, X, init_X, positions_array):
-        #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
-        #except at timestep=0
-        hidden_state=np.zeros((100, self.Hidden_units))
-        cell_state=np.zeros((100, self.Hidden_units))
+        #Feed 1k examples at time to avoid memory problems. Otherwise (10000*100=1million matrix)
+        start=0
+        for i in range(10):
+            end=start+1000
+            #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
+            #except at timestep=0
+            hidden_state=np.zeros((100, self.Hidden_units))
+            cell_state=np.zeros((100, self.Hidden_units))
 
-        #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
-        batches=int(self.numberSteps//100)
-        startB=0
-        for b in range(batches):
-            endB=startB+100
+            #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
+            batches=int(self.numberSteps//100)
+            startB=0
+            for b in range(batches):
+                endB=startB+100
 
-            #Retrieve the inputs for the timestep
-            xBatch=X[:,startB:endB]
+                #Retrieve the inputs for the timestep
+                xBatch=X[start:end,startB:endB]
 
-            #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
-            feed_dict={ self.X: xBatch, 
-                        self.placeCellGround: init_X[:, :self.PlaceCells_units], 
-                        self.headCellGround: init_X[:, self.PlaceCells_units:],
-                        self.timestep: startB,
-                        self.old_cell_state: cell_state,
-                        self.old_hidden_state: hidden_state}
+                #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
+                feed_dict={ self.X: xBatch, 
+                            self.placeCellGround: init_X[start:end, :self.PlaceCells_units], 
+                            self.headCellGround: init_X[start:end, self.PlaceCells_units:],
+                            self.timestep: startB,
+                            self.old_cell_state: cell_state,
+                            self.old_hidden_state: hidden_state}
+                
+                lstm_state, linearNeurons=self.sess.run([self.hidden_cell_statesTuple, self.linearLayer], feed_dict=feed_dict)
+                
+
+                #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
+                #have the same values of the h_state and c_state oututed at the previous timestep training
+                hidden_state=lstm_state[0]
+                cell_state=lstm_state[1]
+
+                positions=np.reshape(positions_array[start:end,startB:endB],(-1,2))
+
+                #save the value of the neurons in the linear layer at each timestep
+                for t in range(linearNeurons.shape[0]):
+                    #Compute which bins are for each position
+                    bin_x, bin_y=(positions[t]//self.factor).astype(int)
+
+                    if(bin_y==self.bins):
+                        bin_y=self.bins-1
+                    elif(bin_x==self.bins):
+                        bin_x=self.bins-1
+
+                    #Now there are the 512 values of the same location
+                    self.activityMap[:,bin_y, bin_x]+=linearNeurons[t]#linearNeurons must be a vector of 512
+                    self.counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
+
+                startB=endB
             
-            lstm_state, linearNeurons=self.sess.run([self.hidden_cell_statesTuple, self.linearLayer], feed_dict=feed_dict)
-            
-
-            #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
-            #have the same values of the h_state and c_state oututed at the previous timestep training
-            hidden_state=lstm_state[0]
-            cell_state=lstm_state[1]
-
-            positions=np.reshape(positions_array[:,startB:endB],(-1,2))
-
-            #save the value of the neurons in the linear layer at each timestep
-            for t in range(linearNeurons.shape[0]):
-                #Compute which bins are for each position
-                bin_x, bin_y=(positions[t]//self.factor).astype(int)
-
-                if(bin_y==20):
-                    bin_y=19
-                elif(bin_x==20):
-                    bin_x=19
-
-                #Now there are the 512 values of the same location
-                self.activityMap[:,bin_y, bin_x]+=linearNeurons[t]#linearNeurons must be a vector of 512
-                self.counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
-
-            startB=endB
+            start=end
 
         self.counterActivityMap[self.counterActivityMap==0]=1
         #Compute average value
@@ -361,7 +367,7 @@ class network():
         fig=plt.figure(figsize=(40, 40))
         for i in range(1, rows*cols+1):
             fig.add_subplot(rows, cols, i)
-            plt.imshow(2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower", interpolation="gaussian")
+            plt.imshow(2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower")#, interpolation="gaussian")
             plt.axis('off')
 
             count+=1

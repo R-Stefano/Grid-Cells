@@ -49,20 +49,17 @@ def trainAgent(agent):
     init_LSTMStateTest[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(posTest[:,0], place_cell_centers)
     init_LSTMStateTest[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angleTest[:,0], head_cell_centers)
 
-    #Load TRAINING Data
-    fileData=pickle.load(open("trajectoriesData.pickle","rb"))
-    inputData=fileData['X']
-    pos=fileData['pos']
-    angle=fileData['angle']
-
-    labelData=np.zeros((pos.shape[0], numberSteps, PlaceCells_units + HeadCells_units))
-    for t in range(numberSteps):
-        labelData[:,t, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(pos[:,t], place_cell_centers)
-        labelData[:,t, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angle[:,t], head_cell_centers)
-    
-    batches=int(inputData.shape[0]/batch_size)
-
     for epoch in range(epoches):
+        #Create training Data
+        inputData, pos, angle=dataGenerator.generateData()
+
+        labelData=np.zeros((pos.shape[0], numberSteps, PlaceCells_units + HeadCells_units))
+        for t in range(numberSteps):
+            labelData[:,t, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(pos[:,t], place_cell_centers)
+            labelData[:,t, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angle[:,t], head_cell_centers)
+        
+        batches=int(inputData.shape[0]/batch_size)
+
         startB=0
         for batch in range(batches):
             endB=startB+batch_size
@@ -87,7 +84,7 @@ def trainAgent(agent):
             startB=endB
 
 def showGridCells(agent):
-    num_traj=5000
+    num_traj=10000
     inputData=np.zeros((num_traj,numberSteps,3))
     positions=np.zeros((num_traj,numberSteps,2))
     angles=np.zeros((num_traj,numberSteps,1))
