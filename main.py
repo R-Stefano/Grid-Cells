@@ -31,7 +31,7 @@ head_cell_centers=rs.uniform(-np.pi,np.pi,size=(HeadCells_units))
 #Number of trajectories to generate and use as data to train the network
 trajectories=500
 #Class that generate the trajectory and allows to compute the Place Cell and Head Cell distributions
-dataGenerator=dataGenerator(trajectories, numberSteps, num_features, PlaceCells_units, HeadCells_units)
+dataGenerator=dataGenerator(numberSteps, num_features, PlaceCells_units, HeadCells_units)
 
 global_step=0
 
@@ -40,10 +40,19 @@ global_step=0
 def trainAgent(agent):
     global global_step
     #LOAD TESTING DATA
-    fileData=pickle.load(open("trajectoriesDataTesting.pickle","rb"))
-    inputDataTest=fileData['X']
-    posTest=fileData['pos']
-    angleTest=fileData['angle']
+    if os.path.isfile("trajectoriesDataTesting.pickle"):
+        print("Loading test data..")
+        fileData=pickle.load(open("trajectoriesDataTesting.pickle","rb"))
+        inputDataTest=fileData['X']
+        posTest=fileData['pos']
+        angleTest=fileData['angle']
+    #Create new data
+    else:
+        print("Creating test data..")
+        inputDataTest, posTest, angleTest=dataGenerator.generateData(batch_size=10)
+        mydict={"X":inputDataTest,"pos":posTest, "angle":angleTest}
+        with open('trajectoriesDataTesting.pickle', 'wb') as f:
+            pickle.dump(mydict, f)
 
     init_LSTMStateTest=np.zeros((10,PlaceCells_units + HeadCells_units))
     init_LSTMStateTest[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(posTest[:,0], place_cell_centers)
@@ -51,7 +60,7 @@ def trainAgent(agent):
 
     for epoch in range(epoches):
         #Create training Data
-        inputData, pos, angle=dataGenerator.generateData()
+        inputData, pos, angle=dataGenerator.generateData(batch_size=trajectories)
 
         labelData=np.zeros((pos.shape[0], numberSteps, PlaceCells_units + HeadCells_units))
         for t in range(numberSteps):
@@ -107,22 +116,18 @@ def showGridCells(agent):
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("mode", help="generate - will generate trajectories and train the model \ntrain - will train the model \nshowcells - will create the activity maps of the neurons")
+    parser.add_argument("mode", help="train - will train the model \nshowcells - will create the activity maps of the neurons")
     args=parser.parse_args()
     with tf.Session() as sess:
         try:
             agent=network(sess, lr=learning_rate, hu=LSTMUnits, lu=linearLayerUnits, place_units=PlaceCells_units, head_units=HeadCells_units, clipping=clipping, weightDecay=weightDecay, batch_size=batch_size, num_features=num_features, n_steps=numberSteps)
 
-            if(args.mode=="generate" or args.mode=="train"):
-                if(args.mode=="generate"):
-                    #If generating new data, remove the old files 
-                    dataGenerator.generateData()
-
+            if(args.mode=="train"):
                 if os.path.exists("agentBackup"):
                     print("Loading the model..")
                     agent.save_restore_Model(restore=True)
                     global_step=sess.run(agent.epoch)
-                    print("Model loaded. Restartin from global step", global_step)
+                    print("Model loaded. Restarting from global step", global_step)
                 
                 trainAgent(agent)
             elif(args.mode=="showcells"):

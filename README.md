@@ -31,24 +31,20 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 
 In order to start the training, `main.py` must be called.
 
-```
-	python3 main.py generate
-```
-
-It will generate 250 trajectories of 800 timesteps each and stores in `trajectoriesData.pickle` file
-and use these data to train the agent automatically.
 
 ```
 	python3 main.py train
 ```
 
-It will load the `trajectoriesData.pickle` already in the folder and train the network
+This command will load the `trajectoriesDataTesting.pickle` if already exist. Othwerwise it is going to create 10 trajectories to use for testing the network accuracy. 
+
+Successivelly, the program generates 500 trajectories of 800 timesteps each. They are fed into the network at batch of 10 trajectories at the time. After 50 training steps, all the 500 trajectories have been fed, so new 500 trajectories are generated.
 
 ```
 	python3 main.py showcells
 ```
 
-It will use the trained agent to generate a trajectory of 1 milion timsteps and show the **activity maps**.
+It will use the trained agent to generate 5000 trajectories of 800 timsteps each and show the linear layer **activity maps** for each neuron as well as the auto-correlations
 
 ## Result
 
