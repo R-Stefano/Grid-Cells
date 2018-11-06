@@ -81,9 +81,11 @@ class network():
             #we now have a matrix of shape [10*100,128] which can be fed to the linear layer. The result is the same as 
             #looping 100 times through each timestep examples.
             self.reshapedOut=tf.reshape(self.output, (-1, self.Hidden_units))
+
+            self.linearLayer=tf.matmul(self.reshapedOut, self.W1) + self.B1
             
             #Compute Linear layer and apply dropout
-            self.linearLayer=tf.nn.dropout(tf.matmul(self.reshapedOut, self.W1) + self.B1, 0.5)
+            self.linearLayerDrop=tf.nn.dropout(self.linearLayer, 0.5)
 
         with tf.variable_scope("Place_Cells_Units"):
             self.W2=tf.get_variable("Weights_LinearDecoder_placeCells", [self.LinearLayer_units, self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer(), 
@@ -91,7 +93,7 @@ class network():
             self.B2=tf.get_variable("Biases_LinearDecoder_placeCells", [self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer())
             
             #Compute the predicted Place Cells Distribution
-            self.OutputPlaceCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayer, self.W2) + self.B2, name="Output_Place_Cells")  
+            self.OutputPlaceCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayerDrop, self.W2) + self.B2, name="Output_Place_Cells")  
 
         with tf.variable_scope("Head_Cells_Units"):
             self.W3=tf.get_variable("Weights_LinearDecoder_HeadDirectionCells", [self.LinearLayer_units, self.HeadCells_units], initializer=tf.contrib.layers.xavier_initializer(), 
@@ -99,7 +101,7 @@ class network():
             self.B3=tf.get_variable("Biases_LinearDecoder_HeadDirectionCells", [self.HeadCells_units], initializer=tf.contrib.layers.xavier_initializer())   
             
             #Compute the predicted Head-direction Cells Distribution
-            self.OutputHeadCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayer, self.W3) + self.B3, name="Output_Head_Cells")
+            self.OutputHeadCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayerDrop, self.W3) + self.B3, name="Output_Head_Cells")
   
     def buildTraining(self):
         #Fed the Ground Truth Place Cells Distribution and Head Direction Cells Distribution
@@ -225,6 +227,8 @@ class network():
 
         avgD=0
 
+        displayPredTrajectories=np.zeros((10,800,2))
+
         #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
         batches=int(self.numberSteps//100)
         startB=0
@@ -258,6 +262,9 @@ class network():
             #it has shape [1000,2]
             predPositions=pcc[idx]
 
+            if epoch%1000==0:
+                displayPredTrajectories[:,startB:endB]=np.reshape(predPositions,(10,100,2))
+
             distances=np.sqrt(np.sum((predPositions - np.reshape(positions, (-1,2)))**2, axis=1))
             avgD +=np.mean(distances)/batches
         
@@ -266,30 +273,21 @@ class network():
         
         self.file.add_summary(mergedData, epoch)
 
-        '''
-        #for every batch
-        for i in range(10):
-            #for every timestep
-            for j in range(100):
-                #retrieve most active neuron
-                idx=np.argmax(placeCellLayerReshaped[i,j])
-                print(pcc[idx])
-                #store in the array
-                predPositions[i,j+startB-1]=pcc[idx]
+        #Compare predicted trajectory with real trajectory
+        if epoch%1000==0:
+            rows=3
+            cols=3
+            fig=plt.figure(figsize=(40, 40))
+            for i in range(rows*cols):
+                fig.add_subplot(rows, cols, i+1)
+                #plot real trajectory
+                plt.plot(positions_array[i,:,0], positions_array[i,:,1], 'b')
+                #plot predicted trajectory
+                plt.plot(displayPredTrajectories[i,:,0], displayPredTrajectories[i,:,1], 'r')
+                plt.axis('off')
 
-        rows=3
-        cols=3
-        fig=plt.figure(figsize=(40, 40))
-        for i in range(1, rows*cols+1):
-            fig.add_subplot(rows, cols, i)
-            #plot real trajectory
-            plt.plot(positions_array[i,:,0], positions_array[i,:,1], 'b')
-            #plot predicted trajectory
-            plt.plot(predPositions[i,:,0], predPositions[i,:,1], 'r')
-            plt.axis('off')
-
-        fig.savefig('predictedTrajectory.jpg')
-        '''
+            fig.savefig('predictedTrajectory.jpg')
+        
 
 
     
@@ -341,7 +339,7 @@ class network():
                         bin_x=self.bins-1
 
                     #Now there are the 512 values of the same location
-                    self.activityMap[:,bin_y, bin_x]+=linearNeurons[t]#linearNeurons must be a vector of 512
+                    self.activityMap[:,bin_y, bin_x]+=np.abs(linearNeurons[t])#linearNeurons must be a vector of 512
                     self.counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
 
                 startB=endB
@@ -364,20 +362,21 @@ class network():
         rows=32
         count=0
         #Save images
-        fig=plt.figure(figsize=(40, 40))
-        for i in range(1, rows*cols+1):
+        fig=plt.figure(figsize=(80, 80))
+        for i in range(1, self.LinearLayer_units+1):
             fig.add_subplot(rows, cols, i)
-            plt.imshow(2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower")#, interpolation="gaussian")
+            normMap=(result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count]))
+            plt.imshow(normMap, cmap="jet", origin="lower")#2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower")#, interpolation="gaussian")
             plt.axis('off')
 
             count+=1
         fig.savefig('activityMaps/neurons.jpg')
 
         count=0
-        fig=plt.figure(figsize=(40, 40))
+        fig=plt.figure(figsize=(80, 80))
         for i in range(1, rows*cols+1):
             fig.add_subplot(rows, cols, i)
-            normMap=2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1
+            normMap=(result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count]))
             plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
             plt.axis('off')
 
