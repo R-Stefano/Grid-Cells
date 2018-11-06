@@ -93,7 +93,7 @@ def trainAgent(agent):
             startB=endB
 
 def showGridCells(agent):
-    num_traj=5000
+    num_traj=10000
     inputData=np.zeros((num_traj,numberSteps,3))
     positions=np.zeros((num_traj,numberSteps,2))
     angles=np.zeros((num_traj,numberSteps,1))

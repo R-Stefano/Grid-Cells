@@ -36,9 +36,9 @@ In order to start the training, `main.py` must be called.
 	python3 main.py train
 ```
 
-This command will load the `trajectoriesDataTesting.pickle` if already exist. Othwerwise it is going to create 10 trajectories to use for testing the network accuracy. 
+This command will load the `trajectoriesDataTesting.pickle` if already exist. Othwerwise, it is going to create 10 trajectories to use for testing the network accuracy. 
 
-Successivelly, the program generates 500 trajectories of 800 timesteps each. They are fed into the network at batch of 10 trajectories at the time. After 50 training steps, all the 500 trajectories have been fed, so new 500 trajectories are generated.
+Successivelly, the program generates 500 trajectories of 800 timesteps each. They are fed into the network at batches of 10 trajectories at the time. After 50 training steps, all the 500 trajectories have been fed, so new 500 trajectories are generated.
 
 ```
 	python3 main.py showcells

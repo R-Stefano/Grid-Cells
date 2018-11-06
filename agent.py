@@ -371,7 +371,6 @@ class network():
             plt.axis('off')
 
             count+=1
-        fig.subplots_adjust(wspace=0.1, hspace=0.1)        
         fig.savefig('activityMaps/neurons.jpg')
 
         count=0
@@ -383,7 +382,6 @@ class network():
             plt.axis('off')
 
             count+=1
-        fig.subplots_adjust(wspace=0.1, hspace=0.1)
         fig.savefig('corrMaps/neurons.jpg')
 
         #Reset the maps
