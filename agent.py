@@ -163,7 +163,7 @@ class network():
         batches=int(self.numberSteps//100)
         lastBatch=batches-1
         for b in range(batches):
-            startB=0
+            startB=b*100
             endB=startB+100
 
             #Retrieve the labels for the 100 timesteps
@@ -217,8 +217,6 @@ class network():
         
         self.file.add_summary(mergedData, epoch)
 
-        startB=endB
-
     def testing(self, X, init_X, positions_array, pcc, epoch):
         #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
         #except at timestep=0
@@ -231,8 +229,8 @@ class network():
 
         #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
         batches=int(self.numberSteps//100)
-        startB=0
         for b in range(batches):
+            startB=b*100
             endB=startB+100
 
             #Retrieve the inputs for the timestep
@@ -286,15 +284,12 @@ class network():
                 plt.plot(displayPredTrajectories[i,:,0], displayPredTrajectories[i,:,1], 'r')
                 plt.axis('off')
 
-            fig.savefig('predictedTrajectory.jpg')
+            fig.savefig('predictedTrajectory.png')
         
-
-
-    
     def showGridCells(self, X, init_X, positions_array):
         #Feed 1k examples at time to avoid memory problems. Otherwise (10000*100=1million matrix)
-        start=0
         for i in range(10):
+            start=i*1000
             end=start+1000
             #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
             #except at timestep=0
@@ -303,8 +298,8 @@ class network():
 
             #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
             batches=int(self.numberSteps//100)
-            startB=0
             for b in range(batches):
+                startB=b*100
                 endB=startB+100
 
                 #Retrieve the inputs for the timestep
@@ -342,10 +337,6 @@ class network():
                     self.activityMap[:,bin_y, bin_x]+=np.abs(linearNeurons[t])#linearNeurons must be a vector of 512
                     self.counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
 
-                startB=endB
-            
-            start=end
-
         self.counterActivityMap[self.counterActivityMap==0]=1
         #Compute average value
         result=self.activityMap/self.counterActivityMap
@@ -366,7 +357,7 @@ class network():
         for i in range(1, self.LinearLayer_units+1):
             fig.add_subplot(rows, cols, i)
             normMap=(result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count]))
-            plt.imshow(normMap, cmap="jet", origin="lower")#2*((result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count])))-1, cmap="jet", origin="lower")#, interpolation="gaussian")
+            plt.imshow(normMap, cmap="jet", origin="lower")
             plt.axis('off')
 
             count+=1

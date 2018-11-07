@@ -69,8 +69,7 @@ def trainAgent(agent):
         
         batches=int(inputData.shape[0]/batch_size)
 
-        startB=0
-        for batch in range(batches):
+        for startB in range(0, batches*batch_size, batch_size):
             endB=startB+batch_size
             #return a tensor of shape 10,800,3
             batchX=inputData[startB:endB]
@@ -90,7 +89,6 @@ def trainAgent(agent):
                 agent.save_restore_Model(restore=False, epoch=global_step)
 
             global_step+=1
-            startB=endB
 
 def showGridCells(agent):
     num_traj=10000
