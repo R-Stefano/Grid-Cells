@@ -1,19 +1,10 @@
 import tensorflow as tf 
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-from scipy.signal import correlate2d
+
 #Define the agent structure network
-class network():
+class Network():
     def __init__(self, session, lr, hu, lu, place_units, head_units, clipping, weightDecay, batch_size, num_features, n_steps):
         self.sess=session
         self.epoch=tf.Variable(0, trainable=False)
-        self.numberSteps=n_steps
-
-        self.bins=32
-        self.factor=2.2/self.bins
-        self.activityMap=np.zeros((lu, self.bins, self.bins))
-        self.counterActivityMap=np.zeros((lu, self.bins, self.bins))
         #HYPERPARAMETERS
         self.learning_rate=lr
         self.Hidden_units=hu
@@ -36,6 +27,8 @@ class network():
 
     def buildNetwork(self):
         self.X=tf.placeholder(tf.float32, shape=[None, 100, self.num_features], name="input")
+
+        self.keepProb=tf.placeholder(tf.float32, name="keep_prob")
 
         self.placeCellGround=tf.placeholder(tf.float32, shape=[None, self.PlaceCells_units], name="Groud_Truth_Place_Cell")
         self.headCellGround=tf.placeholder(tf.float32, shape=[None, self.HeadCells_units], name="Groud_Truth_Head_Cell")
@@ -85,7 +78,7 @@ class network():
             self.linearLayer=tf.matmul(self.reshapedOut, self.W1) + self.B1
             
             #Compute Linear layer and apply dropout
-            self.linearLayerDrop=tf.nn.dropout(self.linearLayer, 0.5)
+            self.linearLayerDrop=tf.nn.dropout(self.linearLayer, self.keepProb)
 
         with tf.variable_scope("Place_Cells_Units"):
             self.W2=tf.get_variable("Weights_LinearDecoder_placeCells", [self.LinearLayer_units, self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer(), 
@@ -145,238 +138,3 @@ class network():
         else:
             self.sess.run(self.epoch.assign(epoch))
             self.saver.save(self.sess, "agentBackup/graph.ckpt")
-    
-    def training(self, X, Y, init_X, epoch):
-        #Stores the initializer weights to restore at the end of each epoch training.
-        initializers=[]
-
-        #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
-        #except at timestep=0
-        hidden_state=np.zeros((self.batch_size, self.Hidden_units))
-        cell_state=np.zeros((self.batch_size, self.Hidden_units))
-
-        #Stores the means of the losses among a training epoch.
-        #Used to show the stats on tensorboard
-        mn_loss=0
-
-        #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
-        batches=int(self.numberSteps//100)
-        lastBatch=batches-1
-        for b in range(batches):
-            startB=b*100
-            endB=startB+100
-
-            #Retrieve the labels for the 100 timesteps
-            yBatchPlaceCells=Y[:, startB:endB, : self.PlaceCells_units]
-            yBatchHeadCells=Y[:, startB:endB, self.PlaceCells_units : ]
-
-            #Retrieve the inputs for the 100 timesteps
-            xBatch=X[:,startB:endB]
-
-            #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
-            feed_dict={ self.X: xBatch, 
-                        self.LabelPlaceCells: yBatchPlaceCells,
-                        self.LabelHeadCells: yBatchHeadCells,
-                        self.placeCellGround: init_X[:, :self.PlaceCells_units], 
-                        self.headCellGround: init_X[:, self.PlaceCells_units:],
-                        self.timestep: startB,
-                        self.old_cell_state: cell_state,
-                        self.old_hidden_state: hidden_state}
-            
-            _, meanLoss, HeadLoss, PlaceLoss, lstm_state=self.sess.run([self.opt,
-                                                                        self.meanLoss,
-                                                                        self.errorHeadCells,
-                                                                        self.errorPlaceCells,
-                                                                        self.hidden_cell_statesTuple], feed_dict=feed_dict)
-
-            #We want that for the next batch of 100 timesteps, the hidden state and cell state of the LSTM cells 
-            #have the same values of the h_state and c_state oututed at the previous timestep training
-            hidden_state=lstm_state[0]
-            cell_state=lstm_state[1]
-
-            #At each training epoch, after the training for timestep=0 save the values
-            #of the weights used to initialize the hidden and cell state. 
-            #We are going to use them at the timestep=0 of the next training epoch
-            if b==0:#it means after the first training
-                initializers.append(self.sess.run(self.Wcp))
-                initializers.append(self.sess.run(self.Wcd))
-                initializers.append(self.sess.run(self.Whp))
-                initializers.append(self.sess.run(self.Whd))
-            elif b==lastBatch:
-                #At the end of each training epoch, set the values of the weights initializers
-                #as when they were after timestep=0. They have changed during the other 749 timesteps.
-                self.sess.run(tf.assign(self.Wcp, initializers[0]))
-                self.sess.run(tf.assign(self.Wcd, initializers[1]))
-                self.sess.run(tf.assign(self.Whp, initializers[2]))
-                self.sess.run(tf.assign(self.Whd, initializers[3]))
-
-            mn_loss += meanLoss/batches
-
-        #training epoch finished, save the errors for tensorboard
-        mergedData=self.sess.run(self.mergeEpisodeData, feed_dict={self.mn_loss: mn_loss})
-        
-        self.file.add_summary(mergedData, epoch)
-
-    def testing(self, X, init_X, positions_array, pcc, epoch):
-        #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
-        #except at timestep=0
-        hidden_state=np.zeros((100, self.Hidden_units))
-        cell_state=np.zeros((100, self.Hidden_units))
-
-        avgD=0
-
-        displayPredTrajectories=np.zeros((10,800,2))
-
-        #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
-        batches=int(self.numberSteps//100)
-        for b in range(batches):
-            startB=b*100
-            endB=startB+100
-
-            #Retrieve the inputs for the timestep
-            xBatch=X[:,startB:endB]
-
-            #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
-            feed_dict={ self.X: xBatch, 
-                        self.placeCellGround: init_X[:, :self.PlaceCells_units], 
-                        self.headCellGround: init_X[:, self.PlaceCells_units:],
-                        self.timestep: startB,
-                        self.old_cell_state: cell_state,
-                        self.old_hidden_state: hidden_state}
-            
-            lstm_state, placeCellLayer=self.sess.run([self.hidden_cell_statesTuple, self.OutputPlaceCellsLayer], feed_dict=feed_dict)
-            
-
-            #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
-            #have the same values of the h_state and c_state oututed at the previous timestep training
-            hidden_state=lstm_state[0]
-            cell_state=lstm_state[1]    
-            
-            #retrieve the position in these 100 timesteps
-            positions=positions_array[:,startB:endB]
-            #placecell is in shape 1000,256. idx has shape 1000,1
-            idx=np.argmax(placeCellLayer, axis=1)
-            
-            #it has shape [1000,2]
-            predPositions=pcc[idx]
-
-            if epoch%1000==0:
-                displayPredTrajectories[:,startB:endB]=np.reshape(predPositions,(10,100,2))
-
-            distances=np.sqrt(np.sum((predPositions - np.reshape(positions, (-1,2)))**2, axis=1))
-            avgD +=np.mean(distances)/batches
-        
-        #testing epoch finished, save the accuracy for tensorboard
-        mergedData=self.sess.run(self.mergeAccuracyData, feed_dict={self.avgD: avgD})
-        
-        self.file.add_summary(mergedData, epoch)
-
-        #Compare predicted trajectory with real trajectory
-        if epoch%1000==0:
-            rows=3
-            cols=3
-            fig=plt.figure(figsize=(40, 40))
-            for i in range(rows*cols):
-                fig.add_subplot(rows, cols, i+1)
-                #plot real trajectory
-                plt.plot(positions_array[i,:,0], positions_array[i,:,1], 'b')
-                #plot predicted trajectory
-                plt.plot(displayPredTrajectories[i,:,0], displayPredTrajectories[i,:,1], 'r')
-                plt.axis('off')
-
-            fig.savefig('predictedTrajectory.png')
-        
-    def showGridCells(self, X, init_X, positions_array):
-        #Feed 1k examples at time to avoid memory problems. Otherwise (10000*100=1million matrix)
-        for i in range(10):
-            start=i*1000
-            end=start+1000
-            #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
-            #except at timestep=0
-            hidden_state=np.zeros((100, self.Hidden_units))
-            cell_state=np.zeros((100, self.Hidden_units))
-
-            #Divide the sequence in 100 steps in order to apply TBTT of 100 timesteps.
-            batches=int(self.numberSteps//100)
-            for b in range(batches):
-                startB=b*100
-                endB=startB+100
-
-                #Retrieve the inputs for the timestep
-                xBatch=X[start:end,startB:endB]
-
-                #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
-                feed_dict={ self.X: xBatch, 
-                            self.placeCellGround: init_X[start:end, :self.PlaceCells_units], 
-                            self.headCellGround: init_X[start:end, self.PlaceCells_units:],
-                            self.timestep: startB,
-                            self.old_cell_state: cell_state,
-                            self.old_hidden_state: hidden_state}
-                
-                lstm_state, linearNeurons=self.sess.run([self.hidden_cell_statesTuple, self.linearLayer], feed_dict=feed_dict)
-                
-
-                #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
-                #have the same values of the h_state and c_state oututed at the previous timestep training
-                hidden_state=lstm_state[0]
-                cell_state=lstm_state[1]
-
-                positions=np.reshape(positions_array[start:end,startB:endB],(-1,2))
-
-                #save the value of the neurons in the linear layer at each timestep
-                for t in range(linearNeurons.shape[0]):
-                    #Compute which bins are for each position
-                    bin_x, bin_y=(positions[t]//self.factor).astype(int)
-
-                    if(bin_y==self.bins):
-                        bin_y=self.bins-1
-                    elif(bin_x==self.bins):
-                        bin_x=self.bins-1
-
-                    #Now there are the 512 values of the same location
-                    self.activityMap[:,bin_y, bin_x]+=np.abs(linearNeurons[t])#linearNeurons must be a vector of 512
-                    self.counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
-
-        self.counterActivityMap[self.counterActivityMap==0]=1
-        #Compute average value
-        result=self.activityMap/self.counterActivityMap
-
-        os.makedirs("activityMaps", exist_ok=True)
-        os.makedirs("corrMaps", exist_ok=True)
-
-
-        '''
-        I want to show 64 neurons in each image so 8x8
-        it means that there will be 8 images
-        '''
-        cols=16
-        rows=32
-        count=0
-        #Save images
-        fig=plt.figure(figsize=(80, 80))
-        for i in range(1, self.LinearLayer_units+1):
-            fig.add_subplot(rows, cols, i)
-            normMap=(result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count]))
-            plt.imshow(normMap, cmap="jet", origin="lower")
-            plt.axis('off')
-
-            count+=1
-        fig.savefig('activityMaps/neurons.jpg')
-
-        count=0
-        fig=plt.figure(figsize=(80, 80))
-        for i in range(1, rows*cols+1):
-            fig.add_subplot(rows, cols, i)
-            normMap=(result[count]-np.min(result[count]))/(np.max(result[count])-np.min(result[count]))
-            plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
-            plt.axis('off')
-
-            count+=1
-        fig.savefig('corrMaps/neurons.jpg')
-
-        #Reset the maps
-        self.activityMap=np.zeros((self.LinearLayer_units, self.bins, self.bins))
-        self.counterActivityMap=np.zeros((self.LinearLayer_units, self.bins, self.bins))
-
-
-

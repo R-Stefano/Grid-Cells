@@ -56,6 +56,7 @@ class dataGenerator():
 
             distributions[:,i]=placeCells
             summs +=placeCells
+
         distributions=distributions/summs[:,None]
         return distributions
 
