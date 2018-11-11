@@ -8,11 +8,6 @@ class Trainer():
         self.numberSteps=numSteps
 
     def training(self, X, Y, init_X, epoch):
-        '''
-        #Stores the initializer weights to restore at the end of each epoch training.
-        initializers=[]
-        '''
-
         #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
         #except at timestep=0
         hidden_state=np.zeros((10, 128))
@@ -54,24 +49,6 @@ class Trainer():
             #have the same values of the h_state and c_state oututed at the previous timestep training
             hidden_state=lstm_state[0]
             cell_state=lstm_state[1]
-
-            '''
-            #At each training epoch, after the training for timestep=0 save the values
-            #of the weights used to initialize the hidden and cell state. 
-            #We are going to use them at the timestep=0 of the next training epoch
-            if startB==0:#it means after the first training
-                initializers.append(self.agent.sess.run(self.agent.Wcp))
-                initializers.append(self.agent.sess.run(self.agent.Wcd))
-                initializers.append(self.agent.sess.run(self.agent.Whp))
-                initializers.append(self.agent.sess.run(self.agent.Whd))
-            elif startB==self.numberSteps-100:
-                #At the end of each training epoch, set the values of the weights initializers
-                #as when they were after timestep=0. They have changed during the other 749 timesteps.
-                self.agent.sess.run(tf.assign(self.agent.Wcp, initializers[0]))
-                self.agent.sess.run(tf.assign(self.agent.Wcd, initializers[1]))
-                self.agent.sess.run(tf.assign(self.agent.Whp, initializers[2]))
-                self.agent.sess.run(tf.assign(self.agent.Whd, initializers[3]))
-            '''
 
             mn_loss += meanLoss/(self.numberSteps//100)
 

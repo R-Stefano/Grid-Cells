@@ -89,33 +89,24 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     os.makedirs("activityMaps", exist_ok=True)
     os.makedirs("corrMaps", exist_ok=True)
 
-    '''
-    I want to show 64 neurons in each image so 8x8
-    it means that there will be 8 images
-    '''
-
-    cols=8
-
+    cols=16
+    rows=32
     #Save images
-    fig=plt.figure(figsize=(80,80))
-    #For each unit in the linear layer
+    fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
-        plt.subplot(llu//cols, cols, i+1)
-        plt.axis('off')
-        plt.title("Neuron "+str(i+1))
-        #Normalize activity map
+        fig.add_subplot(rows, cols, i+1)
         normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
         plt.imshow(normMap, cmap="jet", origin="lower")
+        plt.axis('off')
 
     fig.savefig('activityMaps/neurons.jpg')
 
+    fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
-        plt.subplot(llu//cols, cols, i+1)
-        plt.axis('off')
-        plt.title("Neuron "+str(i+1))
-        #Normalize activity map
+        fig.add_subplot(rows, cols, i+1)
         normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
         plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
+        plt.axis('off')
 
     fig.savefig('corrMaps/neurons.jpg')
 
