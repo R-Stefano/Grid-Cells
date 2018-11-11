@@ -29,7 +29,7 @@ bins=32
 num_trajectories=500
 
 #Number of trajectories used to display the activity maps
-showCellsTrajectories=100
+showCellsTrajectories=5000
 
 #Initialize place cells centers and head cells centers. Every time the program starts they are the same
 rs=np.random.RandomState(seed=10)

@@ -28,8 +28,8 @@ class Trainer():
 
             #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
             feed_dict={ self.agent.X: xBatch, 
-                        self.agent.LabelPlaceCells: yBatch[:, : self.PlaceCells_units],
-                        self.agent.LabelHeadCells: yBatch[:, self.PlaceCells_units : ],
+                        self.agent.LabelPlaceCells: yBatch[:, :, : self.PlaceCells_units],
+                        self.agent.LabelHeadCells: yBatch[:, :, self.PlaceCells_units : ],
                         self.agent.placeCellGround: init_LSTM[:, :self.PlaceCells_units], 
                         self.agent.headCellGround: init_LSTM[:, self.PlaceCells_units:],
                         self.agent.keepProb: 0.5}
