@@ -33,11 +33,6 @@ class Network():
         self.placeCellGround=tf.placeholder(tf.float32, shape=[None, self.PlaceCells_units], name="Groud_Truth_Place_Cell")
         self.headCellGround=tf.placeholder(tf.float32, shape=[None, self.HeadCells_units], name="Groud_Truth_Head_Cell")
 
-        self.timestep=tf.placeholder(tf.int32, name="timestep")
-
-        self.old_cell_state=tf.placeholder(tf.float32, name="old_cell_state")
-        self.old_hidden_state=tf.placeholder(tf.float32, name="old_hidden_state")
-
         with tf.variable_scope("LSTM_initialization"):
             #Initialize the Hidden state and Cell state of the LSTM unit using feeding the Ground Truth Distributio at timestep 0. Both have size [batch_size, Hidden_units]
             self.Wcp=tf.get_variable("Initial_state_cp", [self.PlaceCells_units,self.Hidden_units], initializer=tf.contrib.layers.xavier_initializer())
@@ -53,9 +48,7 @@ class Network():
             #Store self.cell_state and self.hidden_state tensors as elements of a single list.
             #If is going to be timestep=0, initialize the hidden and cell state using the Ground Truth Distributions. 
             #Otherwise, use the hidden state and cell state from the previous timestep passed using the placeholders        
-            self.LSTM_state=tf.cond(tf.equal(self.timestep,0), 
-                                    lambda: tf.nn.rnn_cell.LSTMStateTuple(self.hidden_state, self.cell_state), 
-                                    lambda: tf.nn.rnn_cell.LSTMStateTuple(self.old_hidden_state, self.old_cell_state))
+            self.LSTM_state=tf.nn.rnn_cell.LSTMStateTuple(self.hidden_state, self.cell_state)
 
         with tf.variable_scope("LSTM"):
             #Define the single LSTM cell with the number of hidden units
