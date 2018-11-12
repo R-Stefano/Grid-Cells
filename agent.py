@@ -81,36 +81,42 @@ class Network():
             self.linearLayerDrop=tf.nn.dropout(self.linearLayer, self.keepProb)
 
         with tf.variable_scope("Place_Cells_Units"):
-            self.W2=tf.get_variable("Weights_LinearDecoder_placeCells", [self.LinearLayer_units, self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer(), 
-                                                                                                                            regularizer=tf.contrib.layers.l2_regularizer(self.weight_decay))
+            self.W2=tf.get_variable("Weights_LinearDecoder_placeCells", [self.LinearLayer_units, self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer())
             self.B2=tf.get_variable("Biases_LinearDecoder_placeCells", [self.PlaceCells_units], initializer=tf.contrib.layers.xavier_initializer())
             
             #Compute the predicted Place Cells Distribution
-            self.OutputPlaceCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayerDrop, self.W2) + self.B2, name="Output_Place_Cells")  
+            self.OutputPlaceCellsLayer=tf.matmul(self.linearLayerDrop, self.W2) + self.B2
 
         with tf.variable_scope("Head_Cells_Units"):
-            self.W3=tf.get_variable("Weights_LinearDecoder_HeadDirectionCells", [self.LinearLayer_units, self.HeadCells_units], initializer=tf.contrib.layers.xavier_initializer(), 
-                                                                                                                                regularizer=tf.contrib.layers.l2_regularizer(self.weight_decay))
+            self.W3=tf.get_variable("Weights_LinearDecoder_HeadDirectionCells", [self.LinearLayer_units, self.HeadCells_units], initializer=tf.contrib.layers.xavier_initializer())
             self.B3=tf.get_variable("Biases_LinearDecoder_HeadDirectionCells", [self.HeadCells_units], initializer=tf.contrib.layers.xavier_initializer())   
             
             #Compute the predicted Head-direction Cells Distribution
-            self.OutputHeadCellsLayer=tf.nn.softmax(tf.matmul(self.linearLayerDrop, self.W3) + self.B3, name="Output_Head_Cells")
+            self.OutputHeadCellsLayer=tf.matmul(self.linearLayerDrop, self.W3) + self.B3
   
     def buildTraining(self):
         #Fed the Ground Truth Place Cells Distribution and Head Direction Cells Distribution
         self.LabelPlaceCells=tf.placeholder(tf.float32, shape=[None, 100, self.PlaceCells_units], name="Labels_Place_Cells")
         self.LabelHeadCells=tf.placeholder(tf.float32,  shape=[None, 100, self.HeadCells_units], name="Labels_Head_Cells")
         
+        self.reshapedPlaceCells=tf.reshape(self.LabelPlaceCells, (-1, self.PlaceCells_units))
+        self.reshapedHeadCells=tf.reshape(self.LabelHeadCells, (-1, self.HeadCells_units))
+
         #Compute the errors for each neuron in each trajectory for each timestep [1000,256] and [1000,12] errors
-        self.errorPlaceCells= - tf.reduce_sum(tf.reshape(self.LabelPlaceCells, (-1, self.PlaceCells_units)) * tf.log(self.OutputPlaceCellsLayer + 1e-9), axis=1, name="Error_PlaceCells")
-        self.errorHeadCells= - tf.reduce_sum(tf.reshape(self.LabelHeadCells, (-1, self.HeadCells_units)) * tf.log(self.OutputHeadCellsLayer + 1e-9), axis=1, name="Error_HeadCells")
+        self.errorPlaceCells=tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedPlaceCells, logits=self.OutputPlaceCellsLayer, name="Error_PlaceCells")
+        self.errorHeadCells=tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedHeadCells, logits=self.OutputHeadCellsLayer, name="Error_HeadCells")
         
         #Convert back the tensor from [1000, 1] to [10,100]
         self.reshapedErrors=tf.reshape((self.errorPlaceCells + self.errorHeadCells), (-1,100))
         #Compute the truncated backprop error for each trajectory (SUMMING THE ERRORS). [10,100] -> [10,1]
         self.truncErrors=tf.reduce_sum(self.reshapedErrors, axis=1)
+
+        #Compute the l2_loss
+        l2_loss=self.weight_decay*tf.nn.l2_loss(self.W3) + 
+                self.weight_decay*tf.nn.l2_loss(self.W2)
+
         #Compute mean among truncated errors [10,1] -> [1] (mean error)
-        self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error")
+        self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error") + l2_loss
         
         self.optimizer=tf.train.RMSPropOptimizer(self.learning_rate, momentum=0.9)
 
