@@ -112,8 +112,7 @@ class Network():
         self.truncErrors=tf.reduce_sum(self.reshapedErrors, axis=1)
 
         #Compute the l2_loss
-        l2_loss=self.weight_decay*tf.nn.l2_loss(self.W3) + 
-                self.weight_decay*tf.nn.l2_loss(self.W2)
+        l2_loss=self.weight_decay*tf.nn.l2_loss(self.W3) + self.weight_decay*tf.nn.l2_loss(self.W2)
 
         #Compute mean among truncated errors [10,1] -> [1] (mean error)
         self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error") + l2_loss
