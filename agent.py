@@ -96,19 +96,20 @@ class Network():
         self.reshapedHeadCells=tf.reshape(self.LabelHeadCells, (-1, self.HeadCells_units))
 
         #Compute the errors for each neuron in each trajectory for each timestep [1000,256] and [1000,12] errors
-        self.errorPlaceCells=tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedPlaceCells, logits=self.OutputPlaceCellsLayer, name="Error_PlaceCells")
-        self.errorHeadCells=tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedHeadCells, logits=self.OutputHeadCellsLayer, name="Error_HeadCells")
+        self.errorPlaceCells=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedPlaceCells, logits=self.OutputPlaceCellsLayer, name="Error_PlaceCells"))
+        self.errorHeadCells= tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.reshapedHeadCells, logits=self.OutputHeadCellsLayer, name="Error_HeadCells"))
         
         #Convert back the tensor from [1000, 1] to [10,100]
-        self.reshapedErrors=tf.reshape((self.errorPlaceCells + self.errorHeadCells), (-1,100))
+        #self.reshapedErrors=tf.reshape((self.errorPlaceCells + self.errorHeadCells), (-1,100))
         #Compute the truncated backprop error for each trajectory (SUMMING THE ERRORS). [10,100] -> [10,1]
-        self.truncErrors=tf.reduce_sum(self.reshapedErrors, axis=1)
+        #self.truncErrors=tf.reduce_sum(self.reshapedErrors, axis=1)
 
         #Compute the l2_loss
         l2_loss=self.weight_decay*tf.nn.l2_loss(self.W3) + self.weight_decay*tf.nn.l2_loss(self.W2)
 
         #Compute mean among truncated errors [10,1] -> [1] (mean error)
-        self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error") + l2_loss
+        #self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error") + l2_loss
+        self.meanLoss=self.errorHeadCells + self.errorHeadCells + l2_loss
         
         self.optimizer=tf.train.RMSPropOptimizer(self.learning_rate, momentum=0.9)
 

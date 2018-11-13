@@ -97,7 +97,7 @@ class Trainer():
                 #plot real trajectory
                 plt.plot(positions_array[i,:,0], positions_array[i,:,1], 'b', label="Truth Path")
                 #plot predicted trajectory
-                plt.plot(displayPredTrajectories[i,:,0], displayPredTrajectories[i,:,1], 'g', label="Predicted Path")
+                plt.plot(displayPredTrajectories[i,:,0], displayPredTrajectories[i,:,1], 'go', label="Predicted Path")
                 plt.legend()
                 ax.set_xlim(0,2.2)
                 ax.set_ylim(0,2.2)
