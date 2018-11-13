@@ -109,7 +109,7 @@ class Network():
 
         #Compute mean among truncated errors [10,1] -> [1] (mean error)
         #self.meanLoss=tf.reduce_mean(self.truncErrors, name="mean_error") + l2_loss
-        self.meanLoss=self.errorHeadCells + self.errorHeadCells + l2_loss
+        self.meanLoss=self.errorHeadCells + self.errorPlaceCells + l2_loss
         
         self.optimizer=tf.train.RMSPropOptimizer(self.learning_rate, momentum=0.9)
 
