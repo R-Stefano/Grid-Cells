@@ -58,9 +58,10 @@ def prepareTestingData():
         with open('trajectoriesDataTesting.pickle', 'wb') as f:
             pickle.dump(mydict, f)
 
-    init_LSTMStateTest=np.zeros((10,PlaceCells_units + HeadCells_units))
-    init_LSTMStateTest[:, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(posTest[:,0], place_cell_centers)
-    init_LSTMStateTest[:, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angleTest[:,0], head_cell_centers)
+    init_LSTMStateTest=np.zeros((10,8,PlaceCells_units + HeadCells_units))
+    for i in range(8):
+        init_LSTMStateTest[:, i, :PlaceCells_units]=dataGenerator.computePlaceCellsDistrib(posTest[:,(i*100)], place_cell_centers)
+        init_LSTMStateTest[:, i, PlaceCells_units:]=dataGenerator.computeHeadCellsDistrib(angleTest[:,(i*100)], head_cell_centers)
 
     return inputDataTest, init_LSTMStateTest, posTest
 
@@ -87,11 +88,8 @@ def trainAgent(agent):
             batchX=inputData[startB:endB]
             #return a tensor of shape 10,800,256+12
             batchY=labelData[startB:endB]
-            #Retrieve data for initialize LSTM states
-            #with shape 10,256+12
-            batch_initLSTM=batchY[:,0]
 
-            trainer.training(batchX,batchY,batch_initLSTM, global_step)
+            trainer.training(batchX,batchY, global_step)
             
             if (global_step%800==0):
                 print("\n>>Testing the agent")

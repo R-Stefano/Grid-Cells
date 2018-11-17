@@ -27,9 +27,10 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
         X[i,:,2]=np.cos(angVel)
         positions[i,:]=pos
 
-    init_X=np.zeros((num_traj,pcu + hcu))
-    init_X[:, :pcu]=dataGenerator.computePlaceCellsDistrib(positions[:,0], place_cell_centers)
-    init_X[:, pcu:]=dataGenerator.computeHeadCellsDistrib(angles[:,0], head_cell_centers)
+    init_X=np.zeros((num_traj,8,pcu + hcu))
+    for i in range(8):
+        init_X[:, i, :pcu]=dataGenerator.computePlaceCellsDistrib(positions[:,(i*100)], place_cell_centers)
+        init_X[:, i, pcu:]=dataGenerator.computeHeadCellsDistrib(angles[:,(i*100)], head_cell_centers)
 
 
     print(">>Computing Actvity maps")
@@ -37,11 +38,6 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     batch_size=500
     for startB in range(0, num_traj, batch_size):
         endB=startB+batch_size
-
-        #Store the LSTM_state at each timestep. Use these instead of initialize new ones 
-        #except at timestep=0
-        hidden_state=np.zeros((batch_size, 128))
-        cell_state=np.zeros((batch_size, 128))
 
         #Divide the sequence in 100 steps.
         for startT in range(0, num_steps, 100):
@@ -52,18 +48,11 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
 
             #When the timestep=0, initialize the hidden and cell state of LSTm using init_X. if not timestep=0, the network will use cell_state and hidden_state
             feed_dict={ agent.X: xBatch, 
-                        agent.placeCellGround: init_X[startB:endB, :pcu], 
-                        agent.headCellGround: init_X[startB:endB, pcu:],
-                        agent.timestep: startT,
-                        agent.old_cell_state: cell_state,
-                        agent.old_hidden_state: hidden_state}
+                        agent.placeCellGround: init_X[startB:endB, (startT//100), : pcu], 
+                        agent.headCellGround: init_X[startB:endB,  (startT//100), pcu :]}
             
-            lstm_state, linearNeurons=agent.sess.run([agent.hidden_cell_statesTuple, agent.linearLayer], feed_dict=feed_dict)
-            
-            #We want that for the next timestep training the hidden state and cell state of the LSTM cells 
-            #have the same values of the h_state and c_state oututed at the previous timestep training
-            hidden_state=lstm_state[0]
-            cell_state=lstm_state[1]
+            linearNeurons=agent.sess.run(agent.linearLayer, feed_dict=feed_dict)
+
 
             #Convert 500,100,2 -> 50000,2
             posReshaped=np.reshape(positions[startB:endB,startT:endT],(-1,2))
@@ -82,12 +71,16 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
                 activityMap[:,bin_y, bin_x]+=np.abs(linearNeurons[t])#linearNeurons must be a vector of 512
                 counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
 
-    counterActivityMap[counterActivityMap==0]=1
+    #counterActivityMap[counterActivityMap==0]=1
     #Compute average value
     result=activityMap/counterActivityMap
 
     os.makedirs("activityMaps", exist_ok=True)
     os.makedirs("corrMaps", exist_ok=True)
+
+    #normalize total or single?
+    normMap=(result -np.min(result))/(np.max(result)-np.min(result))
+    #adding absolute value
 
     cols=16
     rows=32
@@ -95,8 +88,8 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
         fig.add_subplot(rows, cols, i+1)
-        normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
-        plt.imshow(normMap, cmap="jet", origin="lower")
+        #normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
+        plt.imshow(normMap[i], cmap="jet", origin="lower")
         plt.axis('off')
 
     fig.savefig('activityMaps/neurons.jpg')
@@ -104,8 +97,8 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
         fig.add_subplot(rows, cols, i+1)
-        normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
-        plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
+        #normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
+        plt.imshow(correlate2d(normMap[i], normMap[i]), cmap="jet", origin="lower")
         plt.axis('off')
 
     fig.savefig('corrMaps/neurons.jpg')
