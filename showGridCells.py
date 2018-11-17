@@ -53,6 +53,7 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
             
             linearNeurons=agent.sess.run(agent.linearLayer, feed_dict=feed_dict)
 
+
             #Convert 500,100,2 -> 50000,2
             posReshaped=np.reshape(positions[startB:endB,startT:endT],(-1,2))
 
@@ -70,12 +71,16 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
                 activityMap[:,bin_y, bin_x]+=np.abs(linearNeurons[t])#linearNeurons must be a vector of 512
                 counterActivityMap[:, bin_y, bin_x]+=np.ones((512))
 
-    counterActivityMap[counterActivityMap==0]=1
+    #counterActivityMap[counterActivityMap==0]=1
     #Compute average value
     result=activityMap/counterActivityMap
 
     os.makedirs("activityMaps", exist_ok=True)
     os.makedirs("corrMaps", exist_ok=True)
+
+    #normalize total or single?
+    normMap=(result -np.min(result))/(np.max(result)-np.min(result))
+    #adding absolute value
 
     cols=16
     rows=32
@@ -83,8 +88,8 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
         fig.add_subplot(rows, cols, i+1)
-        normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
-        plt.imshow(normMap, cmap="jet", origin="lower")
+        #normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
+        plt.imshow(normMap[i], cmap="jet", origin="lower")
         plt.axis('off')
 
     fig.savefig('activityMaps/neurons.jpg')
@@ -92,8 +97,8 @@ def showGridCells(agent, dataGenerator, num_traj, num_steps, pcu, hcu, llu, bins
     fig=plt.figure(figsize=(80, 80))
     for i in range(llu):
         fig.add_subplot(rows, cols, i+1)
-        normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
-        plt.imshow(correlate2d(normMap, normMap), cmap="jet", origin="lower")
+        #normMap=(result[i]-np.min(result[i]))/(np.max(result[i])-np.min(result[i]))
+        plt.imshow(correlate2d(normMap[i], normMap[i]), cmap="jet", origin="lower")
         plt.axis('off')
 
     fig.savefig('corrMaps/neurons.jpg')
