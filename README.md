@@ -22,7 +22,7 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 
 ## Network
 <p align="center">
-  <imgsrc="http://demiledge.com/structureFiles/Images/VBN5.jpg">
+  <img src="http://demiledge.com/structureFiles/Images/VBN5.jpg">
 </p>
 
 ## Getting started
