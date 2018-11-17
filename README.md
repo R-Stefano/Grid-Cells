@@ -1,6 +1,7 @@
 # Vector-based Navigation using Grid-like Representations in Artificial Agents
-
-![Heading Image](http://demiledge.com/structureFiles/Images/VBN0.jpg)
+<p align="center">
+  <img width="460" height="300" src="http://demiledge.com/structureFiles/Images/VBN0.jpg">
+</p>
 
 ## About
 Replicating Google Deepmind's paper ["Vector-based Navigation using Grid-like Representations in Artificial Agents"](https://deepmind.com/blog/grid-cells/).
@@ -47,7 +48,10 @@ Successivelly, the program generates 500 trajectories of 800 timesteps each. The
 It will use the trained agent to generate 5000 trajectories of 800 timsteps each and show the linear layer **activity maps** for each neuron as well as the auto-correlations
 
 ## Result
-
+The agent has been able to self-localize itself with a mean error of 12cm.
+![network Image](https://github.com/R-Stefano/Grid-Cells/blob/master/predictedTrajectory.png)
+Unfortunately, I have not been able to reproduce the same results. In fact, in the **Linear layer** there isn't the emerging of grid-like representations and their correlation map doesn't show hexagonal periodicity.
+![network Image](http://demiledge.com/structureFiles/Images/VBN7.png)
 
 ## Sources
 * [Nature paper](https://www.nature.com/articles/s41586-018-0102-6) by Deepmind
