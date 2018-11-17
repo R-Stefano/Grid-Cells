@@ -1,6 +1,6 @@
 # Vector-based Navigation using Grid-like Representations in Artificial Agents
 <p align="center">
-  <img width="460" height="300" src="http://demiledge.com/structureFiles/Images/VBN0.jpg">
+  <img width="600" height="300" src="http://demiledge.com/structureFiles/Images/VBN0.jpg">
 </p>
 
 ## About
@@ -21,7 +21,9 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 * Matplotlib
 
 ## Network
-![network Image](http://demiledge.com/structureFiles/Images/VBN5.jpg)
+<p align="center">
+  <imgsrc="http://demiledge.com/structureFiles/Images/VBN5.jpg">
+</p>
 
 ## Getting started
 `ratSimulator.py` contains the code used to generate the trajectories. The simulator is based on [this paper](https://journals.plos.org/ploscompbiol/article/file?id=10.1371/journal.pcbi.1002553&type=printable).
@@ -51,7 +53,7 @@ It will use the trained agent to generate 5000 trajectories of 800 timsteps each
 The agent has been able to self-localize itself with a mean error of 12cm.
 ![network Image](https://github.com/R-Stefano/Grid-Cells/blob/master/predictedTrajectory.png)
 Unfortunately, I have not been able to reproduce the same results. In fact, in the **Linear layer** there isn't the emerging of grid-like representations and their correlation map doesn't show hexagonal periodicity.
-![network Image](http://demiledge.com/structureFiles/Images/VBN7.png)
+![network Image](https://github.com/R-Stefano/Grid-Cells/blob/master/activityMaps/neurons.jpg)
 
 ## Sources
 * [Nature paper](https://www.nature.com/articles/s41586-018-0102-6) by Deepmind
