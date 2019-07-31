@@ -1,6 +1,6 @@
 # Vector-based Navigation using Grid-like Representations in Artificial Agents
 <p align="center">
-  <img width="600" height="300" src="http://demiledge.com/structureFiles/Images/VBN0.jpg">
+  <img width="600" height="300" src="http://www.stefanorosa.me/structureFiles/Images/VBN0.jpg">
 </p>
 
 ## About
@@ -13,7 +13,7 @@ You were tired and you didn't even see where you were going. Despite this, you m
 
 Mainly, this achievement has been possible due to the work done in the Hippocampus and in the Entorhinal cortex. In fact, it is believed that particular neurons in these regions of the brain allow us to self-localize and to navigate through environments. In these regions of the brain there are neurons that fire depending on where we are: Place cells and others that fire based on which direction we are facing: Head-direction Cells..
 
-[What are Grid cells?  Full article about the paper here](http://demiledge.com/artificialIntelligence/spatialNavigation.php)
+[What are Grid cells?  Full article about the paper here](http://www.stefanorosa.me/artificialIntelligence/spatialNavigation.php)
 
 ## Dependencies
 * Tensorflow
@@ -22,7 +22,7 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 
 ## Network
 <p align="center">
-  <img src="http://demiledge.com/structureFiles/Images/VBN5.jpg">
+  <img src="http://www.stefanorosa.me/structureFiles/Images/VBN5.jpg">
 </p>
 
 ## Getting started
@@ -58,4 +58,4 @@ Unfortunately, I have not been able to reproduce the same results. In fact, in t
 ## Sources
 * [Nature paper](https://www.nature.com/articles/s41586-018-0102-6) by Deepmind
 * [Deepmind article](https://deepmind.com/blog/grid-cells/)
-* [What are Grid cells? article about the paper](http://demiledge.com/artificialIntelligence/spatialNavigation.php)
+* [What are Grid cells? article about the paper](http://www.stefanorosa.me/artificialIntelligence/spatialNavigation.php)
