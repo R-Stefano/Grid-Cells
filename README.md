@@ -1,6 +1,6 @@
 # Vector-based Navigation using Grid-like Representations in Artificial Agents
 <p align="center">
-  <img width="600" height="300" src="http://www.stefanorosa.me/structureFiles/Images/VBN0.jpg">
+  <img width="600" height="300" src="screenshots/main.jpg">
 </p>
 
 ## About
@@ -22,7 +22,7 @@ Mainly, this achievement has been possible due to the work done in the Hippocamp
 
 ## Network
 <p align="center">
-  <img src="http://www.stefanorosa.me/structureFiles/Images/VBN5.jpg">
+  <img src="screenshots/network_architecture.jpg">
 </p>
 
 ## Getting started
