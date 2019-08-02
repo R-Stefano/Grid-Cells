@@ -13,7 +13,7 @@ You were tired and you didn't even see where you were going. Despite this, you m
 
 Mainly, this achievement has been possible due to the work done in the Hippocampus and in the Entorhinal cortex. In fact, it is believed that particular neurons in these regions of the brain allow us to self-localize and to navigate through environments. In these regions of the brain there are neurons that fire depending on where we are: Place cells and others that fire based on which direction we are facing: Head-direction Cells..
 
-[What are Grid cells?  Full article about the paper here](http://www.stefanorosa.me/artificialIntelligence/spatialNavigation.php)
+[What are Grid cells?  Full article about the paper here](http://www.stefanorosa.me/topicboard/artificialIntelligence/spatialNavigation)
 
 ## Dependencies
 * Tensorflow
@@ -58,4 +58,4 @@ Unfortunately, I have not been able to reproduce the same results. In fact, in t
 ## Sources
 * [Nature paper](https://www.nature.com/articles/s41586-018-0102-6) by Deepmind
 * [Deepmind article](https://deepmind.com/blog/grid-cells/)
-* [What are Grid cells? article about the paper](http://www.stefanorosa.me/artificialIntelligence/spatialNavigation.php)
+* [What are Grid cells? article about the paper](http://www.stefanorosa.me/topicboard/artificialIntelligence/spatialNavigation)
